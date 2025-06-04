@@ -1,29 +1,37 @@
-nano /keshavbotA/plugins/tgraph.py
-file_id, ref = unpack_new_file_id(post.document.file_id)
+from telegraph.aio import Telegraph
+from telegraph.utils import markdown_to_html
+import asyncio
 
-# Generate Markdown content
-md_txt = f"**Batch Link Summary**\n\nTotal Files: `{og_msg}`\n"
-for file in outlist[:20]:  # Limit preview to 20 files
-    name = file.get("title", "No Name")
-    size = file.get("size", 0)
-    size_mb = round(size / (1024 * 1024), 2)
-    md_txt += f"\n📁 **{name}** - `{size_mb} MB`"
+telegraph = Telegraph()
+TOKEN = None
 
-# Convert to HTML for Telegraph
-html = await markdown_to_html(md_txt)
+async def init_telegraph():
+    global TOKEN
+    await telegraph.create_account(short_name='KeshavBot')
+    TOKEN = telegraph.access_token
 
-# Create Telegraph link
-try:
-    t_url = await telegraph_handler(
-        f"Batch by {message.from_user.first_name}",
-        html,
-        author=message.from_user.first_name
+async def create_tgraph_post(md_txt, title="KeshavBot Post"):
+    html_content = await markdown_to_html(md_txt)
+    response = await telegraph.create_page(
+        title=title,
+        html_content=html_content,
+        author_name="KeshavBot"
     )
-    await sts.edit(
-        f"Here is your link:\n📎 [Telegram Start Link](https://t.me/{temp.U_NAME}?start=BATCH-{file_id})\n"
-        f"📝 [Telegraph Summary]({t_url})\n\nContains `{og_msg}` files."
-    )
-except Exception as e:
-    await sts.edit(
-        f"Batch link:\nhttps://t.me/{temp.U_NAME}?start=BATCH-{file_id}\n\nTelegraph failed: `{e}`"
-    )
+    return f"https://telegra.ph/{response['path']}"
+
+# Example usage
+if __name__ == "__main__":
+    async def main():
+        md_txt = "**Welcome to KeshavBot!**\n\nThis is a sample markdown."
+        await init_telegraph()
+        link = await create_tgraph_post(md_txt)
+        print("Telegraph Link:", link)
+
+    asyncio.run(main())
+from plugins.tgraph import create_tgraph_post
+
+@Client.on_message(filters.command("tgraph"))
+async def handle_tgraph(client, message):
+    md_txt = "**Batch Link Summary**\n\nTotal Files: `10`"
+    link = await create_tgraph_post(md_txt, title="Batch Summary")
+    await message.reply_text(f"✅ [View Post]({link})", disable_web_page_preview=True)
