@@ -14,67 +14,13 @@ import urllib.parse
 from telethon.errors import UserNotParticipantError
 from telethon.tl.functions.channels import GetParticipantRequest
 
-tbot = TelegramClient('mdisktelethonbot', Config.API_ID, Config.API_HASH).start(bot_token=Config.BOT_TOKEN)
-client = TelegramClient(StringSession( Config.USER_SESSION_STRING), Config.API_ID, Config.API_HASH)
-
-if Config.REPLIT:
-    from threading import Thread
-
-    from flask import Flask, jsonify
-    
-    app = Flask('')
-    
-    @app.route('/')
-    def main():
-        res = {
-            "status":"running",
-            "hosted":"replit.com",
-            "repl":Config.REPLIT,
-        }
-        
-        return jsonify(res)
-
-    def run():
-      app.run(host="0.0.0.0", port=8000)
-    
-    def keep_alive():
-      server = Thread(target=run)
-      server.start()
-
-async def ping_server():
-    sleep_time = Config.PING_INTERVAL
-    while True:
-        await asyncio.sleep(sleep_time)
-        try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
-                async with session.get(Config.REPLIT) as resp:
-                    logging.info(f"Pinged server with response: {resp.status}")
-        except TimeoutError:
-            logging.warning("Couldn't connect to the site URL..!")
-        except Exception:
-            traceback.print_exc()
-
-
-async def get_user_join(id):
-    if Config.FORCE_SUB == "False":
-        return True
-
-    ok = True
-    try:
-        await tbot(GetParticipantRequest(channel=int(Config.UPDATES_CHANNEL), participant=id))
-        ok = True
-    except UserNotParticipantError:
-        ok = False
-    return ok
-
-
 @tbot.on(events.NewMessage(incoming=True))
 async def message_handler(event):
 
     if event.message.post:
         return
 
-    print("\n")
+    print("\\n")
     print("Message Received: " + event.text)
     # if event.is_channel:return
     if event.text.startswith("/"):return
@@ -89,19 +35,19 @@ async def message_handler(event):
         await asyncio.sleep(Config.AUTO_DELETE_TIME)
         return await haha.delete()
 
-    
+
     print("Group: " + str(event.is_group))
     print("Channel: " + str(event.is_channel))
     args = event.text
     args = await validate_q(args)
 
     print("Search Query: {args}".format(args=args))
-    print("\n")
-    
+    print("\\n")
+
     if not args:
         return
 
-    txt = await event.reply('**Searching For "{}" 🔍**'.format(event.text))
+    txt = await event.reply('**Searching For \"{}\" 🔍**'.format(event.text))
 
     try:
         search = []
@@ -110,25 +56,47 @@ async def message_handler(event):
             search.append(search_msg)
 
         username = Config.UPDATES_CHANNEL_USERNAME
-        answer = f'**Join** [@{username}](https://telegram.me/{username}) \n\n'
+        answer = f'**Join** [@{username}](https://telegram.me/{username}) \\n\\n'
 
         c = 0
+        buttons = [] # Initialize an empty list for buttons
 
         async for msg_list in AsyncIter(search):
             async for msg in msg_list:
                 c += 1
-                f_text = msg.text.replace("*", "")
+                # Check if the message has media (a file)
+                if msg.media:
+                    file_name = ""
+                    if hasattr(msg.media, 'document') and msg.media.document:
+                        file_name = msg.media.document.attributes[0].file_name if msg.media.document.attributes else 'File'
+                    elif hasattr(msg.media, 'video') and msg.media.video:
+                         file_name = msg.media.video.attributes[0].file_name if msg.media.video.attributes else 'Video'
+                    elif hasattr(msg.media, 'audio') and msg.media.audio:
+                         file_name = msg.media.audio.attributes[0].file_name if msg.media.audio.attributes else 'Audio'
+                    # Add more media types if needed
 
-  #              if event.is_group or event.is_channel:
-  #                 f_text = await group_link_convertor(event.chat_id, f_text)
+                    if file_name:
+                        # Generate download link (assuming Telegram file ID can be used)
+                        # You might need to adjust the URL format based on your bot's setup
+                        download_link = f"https://t.me/{tbot.me.username}?start=file_{msg.id}" # This is an example, you might need to change this
 
-                f_text = await link_to_hyperlink(f_text)
-                answer += f'\n\n**✅ PAGE {c}:**\n\n━━━━━━━━━\n\n' + '' + f_text.split("\n", 1)[0] + '' + '\n\n' + '' + f_text.split("\n", 2)[
-                    -1] 
-                
-            # break
+                        # Create an inline keyboard button
+                        button = InlineKeyboardButton(text=file_name, url=download_link)
+                        buttons.append([button]) # Add the button to the list of buttons
+
+                        # Add file name to the answer text
+                        answer += f'\\n\\n**✅ PAGE {c}:**\\n\\n━━━━━━━━━\\n\\n**File:** {file_name}\\n\\n'
+
+                else:
+                    # Existing logic for non-file messages
+                    f_text = msg.text.replace(\"*\", \"\")
+                    f_text = await link_to_hyperlink(f_text)
+                    answer += f'\\n\\n**✅ PAGE {c}:**\\n\\n━━━━━━━━━\\n\\n\' + \'\' + f_text.split(\"\\n\", 1)[0] + \'\' + \'\\n\\n\' + \'\' + f_text.split(\"\\n\", 2)[\
+                        -1]
+
+
         finalsearch = []
-        async for msg in AsyncIter(search):
+        async for msg in AsyncIter(search):\
             finalsearch.append(msg)
 
         if c <= 0:
@@ -152,20 +120,28 @@ async def message_handler(event):
         else:
             pass
 
-        answer += f"\n\n**Uploaded By @{Config.UPDATES_CHANNEL_USERNAME}**"
+        answer += f"\\n\\n**Uploaded By @{Config.UPDATES_CHANNEL_USERNAME}**"
         answer = await replace_username(answer)
-        html_content = await markdown_to_html(answer)
-        html_content = await make_bold(html_content)
-        tgraph_result = await telegraph_handler(
-            html=html_content,
-            title=event.text,
-            author=Config.BOT_USERNAME
-        )
-        message = f'**Click Here 👇 For "{event.text}"**\n\n[🍿🎬 {str(event.text).upper()}\n🍿🎬 {str("Click me for results").upper()}]({tgraph_result})'
-        button =  [Button.url('❓How To Open Link❓',
-                                    f'https://t.me/iP_Update/8')], [
-                            Button.url('👉 Search Here 👈',
-                                    f'https://amzn.to/3MmfpIu')]
+
+        # If there are buttons (meaning files were found), send the message with buttons
+        if buttons:
+             message = answer
+             button = buttons # Use the collected buttons
+        else:
+            # If no files were found, use the existing logic for Telegraph link
+            html_content = await markdown_to_html(answer)
+            html_content = await make_bold(html_content)
+            tgraph_result = await telegraph_handler(
+                html=html_content,
+                title=event.text,
+                author=Config.BOT_USERNAME
+            )
+            message = f'**Click Here 👇 For \"{event.text}\"**\\n\\n[🍿🎬 {str(event.text).upper()}\\n🍿🎬 {str(\"Click me for results\").upper()}]({tgraph_result})'
+            button =  [Button.url('❓How To Open Link❓',
+                                        f'https://t.me/iP_Update/8')], [\
+                                Button.url('👉 Search Here 👈',
+                                        f'https://amzn.to/3MmfpIu')]
+
 
         await txt.delete()
         result = await event.reply(message, buttons=button, link_preview=False)
@@ -173,70 +149,11 @@ async def message_handler(event):
         await event.delete()
         return await result.delete()
 
+
     except Exception as e:
         print(e)
         await txt.delete()
-        result = await event.reply("**Some Error While Searching...‼️\n\nReport @RoyalKrrishn 🥷**")
+        result = await event.reply("**Some Error While Searching...‼️\\n\\nReport @RoyalKrrishn 🥷**")
         await asyncio.sleep(Config.AUTO_DELETE_TIME)
-        await event.delete() 
+        await event.delete()
         return await result.delete()
-
-
-async def escape_url(str):
-    escape_url = urllib.parse.quote(str)
-    return escape_url
-
-
-# Bot Client for Inline Search
-class Bot(Client):
-
-    def __init__(self):
-        super().__init__(
-        Config.BOT_SESSION_NAME,
-        api_id=Config.API_ID,
-        api_hash=Config.API_HASH,
-        bot_token=Config.BOT_TOKEN,
-        plugins=dict(root="plugins")
-        )
-
-    def start(self):
-        if Config.REPLIT:
-            keep_alive()
-            # ping_server()
-        super().start()
-        print('Bot started')
-
-    def stop(self, *args):
-        super().stop()
-        print('Bot Stopped Bye')
-
-print()
-print("-------------------- Initializing Telegram Bot --------------------")
-# Start Clients
-
-tg_app = Bot()
-tg_app.start()
-
-print("------------------------------------------------------------------")
-print()
-print(f"""
- _____________________________________________   
-|                                             |  
-|          Deployed Successfully              |  
-|              Join @{Config.UPDATES_CHANNEL_USERNAME}                 |
-|_____________________________________________|
-    """)
-
-# User.start()
-with tbot, client:
-    tbot.run_until_disconnected()
-    client.run_until_disconnected()
-
-# Loop Clients till Disconnects
-idle()
-# After Disconnects,
-# Stop Clients
-print()
-print("------------------------ Stopped Services ------------------------")
-Bot.stop()
-# User.stop()
