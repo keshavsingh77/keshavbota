@@ -40,7 +40,7 @@ class Config(object):
 
     ABOUT_HELP_TEXT = """
 <b>
-👨‍💻 Developer : <a href='https://t.me/RoyalKrrishna'>Royal Krrishna</a></b>
+👨‍💻 Developer : <a href='https://t.me/keshavraj_77'>keshav bhai</a></b>
 """
 
     HOME_TEXT = """
@@ -49,7 +49,7 @@ Iꜰ Yᴏᴜ Lɪᴋᴇ Mᴇ!😘
 Pʟᴇᴀꜱᴇ Sʜᴀʀᴇ Mᴇ Wɪᴛʜ Yᴏᴜʀ 
 Fʀɪᴇɴᴅꜱ Aɴᴅ Fᴀᴍɪʟʏ.👨‍👨‍👧
 
-Mᴀᴅᴇ Wɪᴛʜ ❤ Bʏ @RoyalKrrishna
+Mᴀᴅᴇ Wɪᴛʜ ❤ Bʏ @keshavraj_77
 """
 
     START_MSG = """
@@ -59,7 +59,7 @@ Mᴇ! SʜᴀʀᴇDɪꜱᴋ Mᴏᴠɪᴇ Sᴇᴀʀᴄʜ Bᴏᴛ.🤖
 
 I Cᴀɴ Sᴇᴀʀᴄʜ Mᴏᴠɪᴇꜱ Fᴏʀ Yᴏᴜ.🔍
 
-Mᴀᴅᴇ Wɪᴛʜ ❤ Bʏ @RoyalKrrishna**
+Mᴀᴅᴇ Wɪᴛʜ ❤ Bʏ @keshavraj_77**
 """
 
 
