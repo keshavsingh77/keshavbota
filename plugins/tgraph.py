@@ -10,7 +10,7 @@ async def telegraph_handler(title, html, author,url):
     response = await telegraph.create_page(
         title=title,
         html_content=html,
-        author_name=author
+        create_account(short_name="MyBot", author_name=author)
         url=url
     )
     return response['url']
