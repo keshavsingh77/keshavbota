@@ -10,7 +10,7 @@ class Config(object):
     USER_SESSION_STRING = os.environ.get("USER_SESSION_STRING", "")
     CHANNEL_ID = int(os.environ.get("CHANNEL_ID", -1002368981263))
     BOT_USERNAME = os.environ.get("Moviebazaar7bot")
-    BOT_OWNER = int(os.environ.get("7045947967"))
+    BOT_OWNER = int(os.environ.get("BOT_OWNER", "7045947967"))  # ✅ sets default if missing
     UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", None)
     DATABASE_URL = os.environ.get("DATABASE_URL", "mongodb+srv://nitishraj66770:nitishraj66770@cluster0.u2jbx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
     LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "-1002461306484"))
