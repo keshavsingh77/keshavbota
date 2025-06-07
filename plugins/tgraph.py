@@ -1,8 +1,7 @@
 from telegraph.aio import Telegraph
 import markdown
 
-
-async def telegraph_handler(title, html, author,url):
+async def telegraph_handler(title, html, author):
     telegraph = Telegraph()
     if len(title) >= 20:
         title = title[:20]
@@ -10,14 +9,11 @@ async def telegraph_handler(title, html, author,url):
     response = await telegraph.create_page(
         title=title,
         html_content=html,
-        create_account(short_name="MyBot", author_name=author)
-        url=url
+        author_name=author
     )
     return response['url']
-
 
 async def markdown_to_html(markdown_txt):
     md = markdown.Markdown()
     html = md.convert(markdown_txt)
     return html
-
