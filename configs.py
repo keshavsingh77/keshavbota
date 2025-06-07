@@ -41,13 +41,12 @@ class Config(object):
 
 📡 Server: <a href='https://heroku.com'>Heroku</a>
 
-👨‍💻 Created By: <a href='//https.me/keshavraj_77'>keshav bhai</a></b>
-"""
+👨‍💻 Created By: <a href='https://t.me/RoyalKrrishna'>Royal Krrishna</a></b>
 """
 
     ABOUT_HELP_TEXT = """
 <b>
-👨‍💻 Developer : <a href='://https.me/keshavraj_77'>keshav bhai</a></b>
+👨‍💻 Developer : <a href='https://t.me/keshavraj_77'>keshav bhai</a></b>
 """
 
     HOME_TEXT = """
