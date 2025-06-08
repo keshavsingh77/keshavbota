@@ -10,7 +10,7 @@ class Config(object):
     
     CHANNEL_ID = int(os.environ.get("CHANNEL_ID", -1002368981263))
     BOT_USERNAME = os.environ.get("BOT_USERNAME", "Moviebazaar7bot")
-    BOT_OWNER = int(os.environ.get("BOT_OWNER", "7045947967"))
+    BOT_OWNER = int(os.environ.get("BOT_OWNER", "7891708910"))
     
     UPDATES_CHANNEL = os.environ.get("UPDATES_CHANNEL", None)
     UPDATES_CHANNEL_USERNAME = os.environ.get("UPDATES_CHANNEL_USERNAME", "pikashow_7")
