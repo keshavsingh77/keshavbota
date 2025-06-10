@@ -86,9 +86,10 @@ async def message_handler(event):
 
                         # Add file name to the answer text
                        answer += (f"\n\n**✅ PAGE {c}:**\n\n━━━━━━━━━\n\n"
-                            f"{f_text.split('\n', 1)[0]}"
-                           f"\n\n{f_text.split('\n', 2)[1]}"
-                           )
+    f"{f_text.split('\n', 1)[0]}"
+    f"\n\n{f_text.split('\n', 2)[1]}"
+)
+
 
 
                 else:
