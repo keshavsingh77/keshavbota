@@ -1,174 +1,160 @@
 # (c) @RoyalKrrishna
 
-import logging
-import traceback
-from os import getenv
-from telethon import TelegramClient, Button, events
-from telethon.sessions import StringSession
-from telethon.errors import UserNotParticipantError
-from telethon.tl.functions.channels import GetParticipantRequest
+from os import link
+from telethon import Button
 from configs import Config
+from pyrogram import Client, idle
 import asyncio
+from telethon import TelegramClient
+from telethon.sessions import StringSession
 from plugins.tgraph import *
 from helpers import *
+from telethon import TelegramClient, events
 import urllib.parse
-
-# Bot and user clients
-tbot = TelegramClient('mdisktelethonbot', Config.API_ID, Config.API_HASH).start(bot_token=Config.BOT_TOKEN)
-client = TelegramClient(StringSession(Config.USER_SESSION_STRING), Config.API_ID, Config.API_HASH)
-
-# Optional keep-alive for Render/Koyeb
-if Config.REPLIT:
-    from threading import Thread
-    from flask import Flask, jsonify
-
-    app = Flask('')
-
-    @app.route('/')
-    def main():
-        return jsonify({"status": "running", "hosted": "Render/Koyeb", "repl": Config.REPLIT})
-
-    def run():
-        app.run(host="0.0.0.0", port=8000)
-
-    def keep_alive():
-        Thread(target=run).start()
-
-
-async def get_user_join(user_id):
-    if Config.FORCE_SUB == "False":
-        return True
-    try:
-        await tbot(GetParticipantRequest(channel=int(Config.UPDATES_CHANNEL), participant=user_id))
-        return True
-    except UserNotParticipantError:
-        return False
-
+from telethon.errors import UserNotParticipantError
+from telethon.tl.functions.channels import GetParticipantRequest
 
 @tbot.on(events.NewMessage(incoming=True))
 async def message_handler(event):
-    if event.message.post or event.text.startswith("/"):
+
+    if event.message.post:
         return
 
-    if not await get_user_join(event.sender_id):
-        join_msg = await event.reply(
-            f"**Hey! {event.sender.first_name} 😃**\n\n**You must join our update channel to use me ✅**",
-            buttons=Button.url('🍿 Join Updates Channel', f'https://t.me/{Config.UPDATES_CHANNEL_USERNAME}')
-        )
-        await asyncio.sleep(Config.AUTO_DELETE_TIME)
-        return await join_msg.delete()
+    print("\\n")
+    print("Message Received: " + event.text)
+    # if event.is_channel:return
+    if event.text.startswith("/"):return
 
-    args = await validate_q(event.text)
+    # Force Subscription
+    if  not await get_user_join(event.sender_id):
+        haha = await event.reply(f'''**Hey! {event.sender.first_name} 😃**
+
+**You Have To Join Our Update Channel To Use Me ✅**
+
+**Click Bellow Button To Join Now.👇🏻**''', buttons=Button.url('🍿Updates Channel🍿', f'https://t.me/{Config.UPDATES_CHANNEL_USERNAME}'))
+        await asyncio.sleep(Config.AUTO_DELETE_TIME)
+        return await haha.delete()
+
+
+    print("Group: " + str(event.is_group))
+    print("Channel: " + str(event.is_channel))
+    args = event.text
+    args = await validate_q(args)
+
+    print("Search Query: {args}".format(args=args))
+    print("\\n")
+
     if not args:
         return
 
-    txt = await event.reply(f'**Searching For "{event.text}" 🔍**')
+    txt = await event.reply('**Searching For \"{}\" 🔍**'.format(event.text))
 
     try:
         search = []
-        async for word in AsyncIter(args.split()):
-            search.append(client.iter_messages(Config.CHANNEL_ID, limit=5, search=word))
+        async for i in AsyncIter(args.split()):
+            search_msg = client.iter_messages(Config.CHANNEL_ID, limit=5, search=i)
+            search.append(search_msg)
 
-        answer = f'**Join** [@{Config.UPDATES_CHANNEL_USERNAME}](https://telegram.me/{Config.UPDATES_CHANNEL_USERNAME}) \n\n'
+        username = Config.UPDATES_CHANNEL_USERNAME
+        answer = f'**Join** [@{username}](https://telegram.me/{username}) \\n\\n'
+
         c = 0
+        buttons = [] # Initialize an empty list for buttons
 
         async for msg_list in AsyncIter(search):
             async for msg in msg_list:
                 c += 1
-                f_text = msg.text.replace("*", "")
-                f_text = await link_to_hyperlink(f_text)
+                # Check if the message has media (a file)
+                if msg.media:
+                    file_name = ""
+                    if hasattr(msg.media, 'document') and msg.media.document:
+                        file_name = msg.media.document.attributes[0].file_name if msg.media.document.attributes else 'File'
+                    elif hasattr(msg.media, 'video') and msg.media.video:
+                         file_name = msg.media.video.attributes[0].file_name if msg.media.video.attributes else 'Video'
+                    elif hasattr(msg.media, 'audio') and msg.media.audio:
+                         file_name = msg.media.audio.attributes[0].file_name if msg.media.audio.attributes else 'Audio'
+                    # Add more media types if needed
 
-                file_info = ""
-                buttons = None
+                    if file_name:
+                        # Generate download link (assuming Telegram file ID can be used)
+                        # You might need to adjust the URL format based on your bot's setup
+                        download_link = f"https://t.me/{tbot.me.username}?start=file_{msg.id}" # This is an example, you might need to change this
 
-                if getattr(msg, "file", None):
-                    file_name = getattr(msg.file, "name", "Unknown")
-                    file_size = getattr(msg.file, "size", 0)
+                        # Create an inline keyboard button
+                        button = InlineKeyboardButton(text=file_name, url=download_link)
+                        buttons.append([button]) # Add the button to the list of buttons
 
-                    size_str = (
-                        f"{file_size / (1024 * 1024):.2f} MB" if file_size > 1024 * 1024
-                        else f"{file_size / 1024:.2f} KB" if file_size > 1024
-                        else f"{file_size} B"
-                    )
-                    file_link = f"https://t.me/{Config.UPDATES_CHANNEL_USERNAME}/{msg.id}"
+                        # Add file name to the answer text
+                        answer += f'\\n\\n**✅ PAGE {c}:**\\n\\n━━━━━━━━━\\n\\n**File:** {file_name}\\n\\n'
 
-                    file_info = (
-                        f"\n\n📂 **File Name:** `{file_name}`"
-                        f"\n📦 **Size:** `{size_str}`"
-                        f"\n🔗 [Click to Download]({file_link})"
-                    )
-                    buttons = [[Button.url("⬇️ Download", file_link)]]
+                else:
+                    # Existing logic for non-file messages
+                    f_text = msg.text.replace(\"*\", \"\")
+                    f_text = await link_to_hyperlink(f_text)
+                    answer += f'\\n\\n**✅ PAGE {c}:**\\n\\n━━━━━━━━━\\n\\n\' + \'\' + f_text.split(\"\\n\", 1)[0] + \'\' + \'\\n\\n\' + \'\' + f_text.split(\"\\n\", 2)[\
+                        -1]
 
-                result_text = (
-                    f'\n\n**✅ PAGE {c}:**\n\n━━━━━━━━━\n\n'
-                    + f_text.split("\n", 1)[0]
-                    + '\n\n'
-                    + f_text.split("\n", 2)[-1]
-                    + file_info
-                )
-                await event.reply(result_text, buttons=buttons)
 
-        if c == 0:
+        finalsearch = []
+        async for msg in AsyncIter(search):\
+            finalsearch.append(msg)
+
+        if c <= 0:
+            answer = f'''**No Results Found For {event.text}**
+
+**Type Only Movie Name 💬**
+**Check Spelling On** [Google](http://www.google.com/search?q={event.text.replace(' ', '%20')}%20Movie) 🔍
+'''
+
+            newbutton = [Button.url('Click To Check Spelling ✅',
+                                    f'http://www.google.com/search?q={event.text.replace(" ", "%20")}%20Movie')], [
+                            Button.url('Click To Check Release Date 📅',
+                                    f'http://www.google.com/search?q={event.text.replace(" ", "%20")}%20Movie%20Release%20Date')], [
+                            Button.url('👉 Search Here 👈',
+                                    f'https://amzn.to/3ykSzxC')]
             await txt.delete()
-            google_query = event.text.replace(" ", "%20")
-            not_found_msg = f"""**No Results Found For {event.text}**
-
-🔍 Try searching on [Google](http://www.google.com/search?q={google_query}%20Movie)
-
-Please type only movie name correctly.
-"""
-            buttons = [
-                [Button.url('✅ Check Spelling', f'http://www.google.com/search?q={google_query}%20Movie')],
-                [Button.url('📅 Check Release Date', f'http://www.google.com/search?q={google_query}%20Movie%20Release%20Date')],
-                [Button.url('🎬 Search on Amazon', 'https://amzn.to/3ykSzxC')],
-            ]
-            result = await event.reply(not_found_msg, buttons=buttons, link_preview=False)
+            result = await event.reply(answer, buttons=newbutton, link_preview=False)
             await asyncio.sleep(Config.AUTO_DELETE_TIME)
             await event.delete()
             return await result.delete()
+        else:
+            pass
+
+        answer += f"\\n\\n**Uploaded By @{Config.UPDATES_CHANNEL_USERNAME}**"
+        answer = await replace_username(answer)
+
+        # If there are buttons (meaning files were found), send the message with buttons
+        if buttons:
+             message = answer
+             button = buttons # Use the collected buttons
+        else:
+            # If no files were found, use the existing logic for Telegraph link
+            html_content = await markdown_to_html(answer)
+            html_content = await make_bold(html_content)
+            tgraph_result = await telegraph_handler(
+                html=html_content,
+                title=event.text,
+                author=Config.BOT_USERNAME
+            )
+            message = f'**Click Here 👇 For \"{event.text}\"**\\n\\n[🍿🎬 {str(event.text).upper()}\\n🍿🎬 {str(\"Click me for results\").upper()}]({tgraph_result})'
+            button =  [Button.url('❓How To Open Link❓',
+                                        f'https://t.me/iP_Update/8')], [\
+                                Button.url('👉 Search Here 👈',
+                                        f'https://amzn.to/3MmfpIu')]
+
 
         await txt.delete()
-
-    except Exception as e:
-        logging.error(str(e))
-        await txt.delete()
-        result = await event.reply("**❌ Error while searching. Please report to @RoyalKrrishn**")
+        result = await event.reply(message, buttons=button, link_preview=False)
         await asyncio.sleep(Config.AUTO_DELETE_TIME)
         await event.delete()
         return await result.delete()
 
 
-# Entry point
-class Bot(Client):
-    def __init__(self):
-        super().__init__(
-            Config.BOT_SESSION_NAME,
-            api_id=Config.API_ID,
-            api_hash=Config.API_HASH,
-            bot_token=Config.BOT_TOKEN,
-            plugins=dict(root="plugins")
-        )
+    except Exception as e:
+        print(e)
+        await txt.delete()
+        result = await event.reply("**Some Error While Searching...‼️\\n\\nReport @RoyalKrrishn 🥷**")
+        await asyncio.sleep(Config.AUTO_DELETE_TIME)
+        await event.delete()
+        return await result.delete()
 
-    def start(self):
-        if Config.REPLIT:
-            keep_alive()
-        super().start()
-        print('✅ Bot Started')
-
-    def stop(self, *args):
-        super().stop()
-        print('🛑 Bot Stopped')
-
-
-print("\n-------------------- Initializing Telegram Bot --------------------\n")
-tg_app = Bot()
-tg_app.start()
-
-print(f"""
-📦 Deployed Successfully!
-👉 Join @{Config.UPDATES_CHANNEL_USERNAME}
-""")
-
-with tbot, client:
-    tbot.run_until_disconnected()
-    client.run_until_disconnected()
